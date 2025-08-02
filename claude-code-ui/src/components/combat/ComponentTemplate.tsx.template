@@ -1,0 +1,265 @@
+/**
+ * 组件开发模板
+ * 
+ * 使用说明：
+ * 1. 复制此模板文件到对应的目录中
+ * 2. 重命名文件和组件名称
+ * 3. 实现具体的渲染逻辑
+ * 4. 注册到SmartMessageRenderer中
+ * 
+ * 命名规范：
+ * - 文件命名: PascalCase.tsx (如: TaskToolUse.tsx)
+ * - 组件命名: PascalCase (如: TaskToolUse)
+ * - 目录命名: kebab-case (如: tool-use/)
+ * 
+ * 新特性：
+ * - 默认支持折叠功能
+ * - 集成JSON展示，无需外部JSON按钮
+ */
+
+'use client';
+
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ChevronDown, ChevronRight, Code } from 'lucide-react';
+import { MessageContainer } from '../../messages/core';
+import { BadgeGroup, StatusIndicator, ContentHash, Timestamp } from '../../messages';
+import { CodeRenderer, JsonRenderer, MarkdownRenderer } from '../../messages/renderers';
+
+// 组件Props接口 - 必须实现这个接口
+interface ComponentNameProps {
+  message: any;
+  sessionId: string;
+  theme?: 'light' | 'dark';
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
+}
+
+export function ComponentName({ 
+  message, 
+  sessionId, 
+  theme = 'light',
+  isExpanded = false,
+  onToggleExpand 
+}: ComponentNameProps) {
+  const [isJsonExpanded, setIsJsonExpanded] = useState(false);
+  
+  // 生成内容哈希（使用公共方法）
+  const generateContentHash = (message: any): string => {
+    const jsonString = JSON.stringify(message, null, 0);
+    let hash = 0;
+    for (let i = 0; i < jsonString.length; i++) {
+      const char = jsonString.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash;
+    }
+    return Math.abs(hash).toString(16).padStart(8, '0');
+  };
+
+  const contentHash = generateContentHash(message);
+  
+  // 分析消息内容
+  const content = message.message?.content;
+  const isSpecialType = message.isMeta || message.isSidechain;
+  
+  // TODO: 根据具体消息类型实现内容分析逻辑
+  // 例如：
+  // const hasToolData = content && content.tool_name;
+  // const hasError = content && content.is_error;
+  
+  // 准备标签数据
+  const badges = [];
+  if (message.isMeta) badges.push({ label: 'Meta', color: 'orange' });
+  if (message.isSidechain) badges.push({ label: 'Sidechain', color: 'purple' });
+  
+  // TODO: 添加特定于组件的标签
+  // if (hasError) badges.push({ label: '错误', color: 'red' });
+  
+  // 确定组件样式主题色
+  const getComponentStyle = () => {
+    // TODO: 根据消息类型返回适当的样式
+    // 可选颜色: blue, green, yellow, red, purple, orange, gray
+    return 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/20';
+  };
+
+  // 获取组件图标
+  const getComponentIcon = () => {
+    // TODO: 导入合适的图标并返回
+    // import { ToolIcon } from 'lucide-react';
+    // return <ToolIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />;
+    return null;
+  };
+
+  // 获取组件标题
+  const getComponentTitle = () => {
+    // TODO: 根据消息内容返回合适的标题
+    return 'Component Name';
+  };
+
+  // 获取边框颜色 (十六进制) - 示例
+  const getBorderColor = () => {
+    // TODO: 根据组件类型或消息内容返回合适的颜色
+    // 示例颜色映射：
+    // return '#3b82f6'; // blue-500 - 信息类型
+    // return '#10b981'; // emerald-500 - 成功类型  
+    // return '#f59e0b'; // amber-500 - 警告类型
+    // return '#ef4444'; // red-500 - 错误类型
+    // return '#8b5cf6'; // violet-500 - 特殊类型
+    return '#6b7280'; // gray-500 - 默认颜色
+  };
+
+  return (
+    <MessageContainer
+      message={message}
+      sessionId={sessionId}
+      contentHash={contentHash}
+      theme={theme}
+      isExpanded={isExpanded}
+      onToggleExpand={onToggleExpand}
+      showMetadata={false}
+      borderColor={getBorderColor()}
+      onViewJson={() => {}}
+      customHeader={
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {getComponentIcon()}
+              <span className="font-medium text-blue-900 dark:text-blue-100">
+                {getComponentTitle()}
+              </span>
+              <BadgeGroup badges={badges} />
+            </div>
+            <div className="flex items-center gap-2">
+              <Timestamp timestamp={message.timestamp} format="both" variant="inline" />
+              <ContentHash content={message} variant="badge" showCopyButton />
+            </div>
+          </div>
+        </CardHeader>
+      }
+    >
+      <Card className={`w-full ${getComponentStyle()}`}>
+        <CardContent className="pt-4">
+          <div className="space-y-4">
+            
+            {/* 状态指示器（可选） */}
+            {/* <StatusIndicator status="success" label="操作成功" variant="card" /> */}
+            
+            {/* 主要内容区域 */}
+            <div className="space-y-3">
+              
+              {/* TODO: 实现具体的内容渲染逻辑 */}
+              
+              {/* 示例：渲染文本内容 */}
+              {typeof content === 'string' && (
+                <div className="bg-white dark:bg-gray-800 p-4 rounded-md">
+                  <MarkdownRenderer content={content} theme={theme} />
+                </div>
+              )}
+              
+              {/* 示例：渲染代码内容 */}
+              {/* {content && content.code && (
+                <CodeRenderer 
+                  code={content.code}
+                  language={content.language || 'text'}
+                  theme={theme}
+                  fileName={content.filename}
+                />
+              )} */}
+              
+              {/* 示例：渲染JSON数据 */}
+              {/* {content && typeof content === 'object' && (
+                <JsonRenderer 
+                  data={content} 
+                  theme={theme}
+                  isCollapsible
+                  title="数据内容"
+                />
+              )} */}
+              
+              {/* 示例：特殊内容处理 */}
+              {/* {content && content.special_field && (
+                <div className="bg-yellow-100 dark:bg-yellow-900/30 p-3 rounded-md border-l-4 border-yellow-500">
+                  <div className="flex items-center gap-2 mb-2">
+                    <SpecialIcon className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                    <span className="font-medium text-yellow-900 dark:text-yellow-100">特殊内容</span>
+                  </div>
+                  <div className="text-sm">
+                    {content.special_field}
+                  </div>
+                </div>
+              )} */}
+            </div>
+
+            {/* 额外信息区域（可选） */}
+            {/* {(message.additionalField1 || message.additionalField2) && (
+              <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+                <h5 className="font-medium mb-2 text-sm">额外信息</h5>
+                <div className="space-y-1 text-xs text-gray-500 dark:text-gray-400">
+                  {message.additionalField1 && (
+                    <div><span className="font-medium">字段1:</span> {message.additionalField1}</div>
+                  )}
+                  {message.additionalField2 && (
+                    <div><span className="font-medium">字段2:</span> {message.additionalField2}</div>
+                  )}
+                </div>
+              </div>
+            )} */}
+
+            {/* 集成JSON展示 - 每个组件都包含这个功能 */}
+            <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+              <Collapsible open={isJsonExpanded} onOpenChange={setIsJsonExpanded}>
+                <CollapsibleTrigger asChild>
+                  <Button variant="outline" className="w-full justify-between">
+                    <div className="flex items-center gap-2">
+                      <Code className="h-4 w-4" />
+                      <span>查看完整JSON数据</span>
+                    </div>
+                    {isJsonExpanded ? (
+                      <ChevronDown className="h-4 w-4" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4" />
+                    )}
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-2">
+                  <div className="max-h-80 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+                    <JsonRenderer 
+                      data={message} 
+                      theme={theme}
+                      isCollapsible={false}
+                      showCopyButton={true}
+                      maxHeight="max-h-80"
+                    />
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </MessageContainer>
+  );
+}
+
+// 注册组件示例（在SmartMessageRenderer中使用）
+/*
+const componentConfig = {
+  type: 'component-name-message',
+  component: ComponentName,
+  priority: 150, // 优先级，数字越高优先级越高
+  matchCondition: (message: any) => {
+    // TODO: 实现匹配条件
+    // 返回true表示当前组件应该处理这条消息
+    const analysis = MessageTypeAnalyzer.analyzeMessage(message);
+    return analysis.baseType === 'expected_type' && 
+           analysis.flags.includes('expected_flag');
+  },
+  description: 'Component Name组件描述'
+};
+
+// 注册到组件注册表
+ComponentRegistry.registerComponent(componentConfig);
+*/ 
